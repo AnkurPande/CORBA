@@ -1,0 +1,12 @@
+module common 
+{
+	interface ILibrary 
+	{
+		boolean createAccount(in string firstName, in string lastName, in string emailAddress, 
+			in string phoneNumber, in string userName, in string password, in string inst);
+		boolean reserveBook(in string username, in string password, in string bookName, 
+			in string authorName);
+		string getNonRetuners(in string username, in string password, in string inst,
+			in short numOfDays);
+	};	
+};
