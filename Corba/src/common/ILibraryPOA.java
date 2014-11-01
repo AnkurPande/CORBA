@@ -39,6 +39,8 @@ public abstract class ILibraryPOA extends org.omg.PortableServer.Servant
                 return _invoke_getNonRetuners(_is, handler);
         } else if (opName.equals("reserveBook")) {
                 return _invoke_reserveBook(_is, handler);
+        } else if (opName.equals("reserveInterLibrary")) {
+                return _invoke_reserveInterLibrary(_is, handler);
         } else {
             throw new org.omg.CORBA.BAD_OPERATION(opName);
         }
@@ -95,6 +97,23 @@ public abstract class ILibraryPOA extends org.omg.PortableServer.Servant
 
         _output = handler.createReply();
         _output.write_string(_arg_result);
+
+        return _output;
+    }
+
+    private org.omg.CORBA.portable.OutputStream _invoke_reserveInterLibrary(
+            final org.omg.CORBA.portable.InputStream _is,
+            final org.omg.CORBA.portable.ResponseHandler handler) {
+        org.omg.CORBA.portable.OutputStream _output;
+        String arg0_in = _is.read_string();
+        String arg1_in = _is.read_string();
+        String arg2_in = _is.read_string();
+        String arg3_in = _is.read_string();
+
+        boolean _arg_result = reserveInterLibrary(arg0_in, arg1_in, arg2_in, arg3_in);
+
+        _output = handler.createReply();
+        _output.write_boolean(_arg_result);
 
         return _output;
     }

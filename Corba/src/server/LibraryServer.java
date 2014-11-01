@@ -456,4 +456,11 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 		}
 	}
 
+	@Override
+	public boolean reserveInterLibrary(String username, String password,
+			String bookName, String authorName) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

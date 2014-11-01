@@ -182,4 +182,57 @@ public class _ILibraryStub extends org.omg.CORBA.portable.ObjectImpl
         }
     }
 
+    /**
+     * Operation reserveInterLibrary
+     */
+    public boolean reserveInterLibrary(String username, String password, String bookName, String authorName)
+    {
+        while(true)
+        {
+            if (!this._is_local())
+            {
+                org.omg.CORBA.portable.InputStream _input = null;
+                try
+                {
+                    org.omg.CORBA.portable.OutputStream _output = this._request("reserveInterLibrary",true);
+                    _output.write_string(username);
+                    _output.write_string(password);
+                    _output.write_string(bookName);
+                    _output.write_string(authorName);
+                    _input = this._invoke(_output);
+                    boolean _arg_ret = _input.read_boolean();
+                    return _arg_ret;
+                }
+                catch(org.omg.CORBA.portable.RemarshalException _exception)
+                {
+                    continue;
+                }
+                catch(org.omg.CORBA.portable.ApplicationException _exception)
+                {
+                    String _exception_id = _exception.getId();
+                    throw new org.omg.CORBA.UNKNOWN("Unexpected User Exception: "+ _exception_id);
+                }
+                finally
+                {
+                    this._releaseReply(_input);
+                }
+            }
+            else
+            {
+                org.omg.CORBA.portable.ServantObject _so = _servant_preinvoke("reserveInterLibrary",_opsClass);
+                if (_so == null)
+                   continue;
+                common.ILibraryOperations _self = (common.ILibraryOperations) _so.servant;
+                try
+                {
+                    return _self.reserveInterLibrary( username,  password,  bookName,  authorName);
+                }
+                finally
+                {
+                    _servant_postinvoke(_so);
+                }
+            }
+        }
+    }
+
 }

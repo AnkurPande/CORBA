@@ -22,4 +22,9 @@ public interface ILibraryOperations
      */
     public String getNonRetuners(String username, String password, String inst, short numOfDays);
 
+    /**
+     * Operation reserveInterLibrary
+     */
+    public boolean reserveInterLibrary(String username, String password, String bookName, String authorName);
+
 }

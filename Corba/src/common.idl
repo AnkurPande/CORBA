@@ -8,5 +8,7 @@ module common
 			in string authorName);
 		string getNonRetuners(in string username, in string password, in string inst,
 			in short numOfDays);
+		
+		boolean reserveInterLibrary(in string username, in string password, in string bookName, in string authorName);
 	};	
 };
