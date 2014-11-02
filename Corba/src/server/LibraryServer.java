@@ -1,5 +1,6 @@
 package server;
 
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -19,10 +20,13 @@ import org.omg.CORBA.DomainManager;
 import org.omg.CORBA.ExceptionList;
 import org.omg.CORBA.NVList;
 import org.omg.CORBA.NamedValue;
+import org.omg.CORBA.ORB;
 import org.omg.CORBA.Object;
 import org.omg.CORBA.Policy;
 import org.omg.CORBA.Request;
 import org.omg.CORBA.SetOverrideType;
+import org.omg.PortableServer.POA;
+import org.omg.PortableServer.POAHelper;
 
 import common.*;
 
@@ -35,6 +39,9 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 	private int udpPort = 0;
 	private static ArrayList<LibraryServer> servers = new ArrayList<LibraryServer>();
 
+	//TODO change later
+	public String[] args;
+	
 	public int getUdpPort() {
 		return udpPort;
 	}
@@ -285,8 +292,30 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 	 */
 	public void run()
 	{
+		
 		DatagramSocket aSocket = null;
 		try {
+			//ORB Part
+			
+			ORB orb = ORB.init(args,null);
+			POA rootPoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+			
+			
+			byte[] id = rootPoa.activate_object(this); 
+			org.omg.CORBA.Object ref = rootPoa.id_to_reference(id);
+			
+			String ior = orb.object_to_string(ref);
+			System.out.println(ior);
+			
+			PrintWriter file = new PrintWriter("logs/"+this.instituteName+".txt");
+			file.println(ior);
+			file.close();
+			
+			rootPoa.the_POAManager().activate();
+			orb.run();
+			
+			
+			//UDP part
 			aSocket = new DatagramSocket(this.udpPort);
 			byte [] buffer = new byte[10000];
 			this.logger.info("UPD server for "+this.instituteName+" is running on port: "+udpPort);
@@ -384,10 +413,13 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 	public static void main(String args[])
 	{
 		try{
-			int port = 1099;
-			LibraryServer server1 = new LibraryServer("Concordia University", 6780);
-			LibraryServer server2 = new LibraryServer("Mcgill University", 6781);
-			LibraryServer server3 = new LibraryServer("Montreal University", 6782);
+			//int port = 1099;
+			Thread server1 =  new Thread(new LibraryServer("Concordia", 6780));
+			server1.start();
+			Thread server2 =  new Thread(new LibraryServer("Mcgill", 6781));
+			server2.start();
+			Thread server3 =  new Thread(new LibraryServer("Montreal", 6781));
+			server3.start();
 			
 			/*Registry r;
 			r = LocateRegistry.createRegistry(port);
@@ -405,13 +437,13 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 			//server2.start();
 			//server3.start();
 			
-			addData(server1);
+			/*addData(server1);
 			addData(server2);
 			addData(server3);
 			
 			servers.add(server1);
 			servers.add(server2);
-			servers.add(server3);
+			servers.add(server3);*/
 			
 			//server1.createAccount("Frankenstein", "Test", "frankenstein@test.com", "123456", "Frankenstein", "abcd", server1.instituteName);
 			//server2.createAccount("drwho900", "Test", "drwho900@test.com", "123456", "drwho900", "abcd", server2.instituteName);
@@ -421,13 +453,33 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 			server2.reserveBook("drwho900", "abcd", "3DMath", "Fletcher");
 			server2.reserveBook("drwho900", "abcd", "3DMath", "Fletcher");
 			server1.reserveBook("Frankenstein", "abcd", "Cuda", "Nicholas");*/
-			
-			runDebugTool();
+
+			//runDebugTool();
 		}
 		catch(Exception err){
 			err.printStackTrace();
 		}
 		
+	}
+	
+	public static void createAndRunServer(String args[], String name) throws Exception {
+		
+		ORB orb = ORB.init(args,null);
+		POA rootPoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+		
+		LibraryServer server = new LibraryServer(name, 6780);
+		byte[] id = rootPoa.activate_object(server); 
+		org.omg.CORBA.Object ref = rootPoa.id_to_reference(id);
+		
+		String ior = orb.object_to_string(ref);
+		System.out.println(ior);
+		
+		PrintWriter file = new PrintWriter("logs/"+server.instituteName+".txt");
+		file.println(ior);
+		file.close();
+		
+		rootPoa.the_POAManager().activate();
+		orb.run();
 	}
 	
 	/**

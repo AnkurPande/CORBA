@@ -1,13 +1,16 @@
 package client;
 
-import java.rmi.Naming;
-import java.rmi.RMISecurityManager;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.Scanner;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+import org.omg.CORBA.ORB;
+
 import common.ILibrary;
+import common.ILibraryHelper;
 
 public abstract class BaseClient extends Thread
 {
@@ -19,6 +22,8 @@ public abstract class BaseClient extends Thread
 	
 	//Logger
 	protected Logger logger;
+	
+	public String[] args;
 	
 	public void setLogger(String username, String fileName) {
 		try{
@@ -35,12 +40,19 @@ public abstract class BaseClient extends Thread
 	
 	//End Logger
 	
-	public void initializeServers() throws Exception {
-		System.setSecurityManager(new RMISecurityManager());
+	public void initializeServers(String[] args) throws Exception {
+		ORB orb = ORB.init(args, null);
 		
-		concordiaServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+CONCORDIA);		
-		montrealServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+MONTREAL);
-		mcgillServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+MCGILL);	
+		BufferedReader br = new BufferedReader(new FileReader("logs/Concordia.txt"));
+		String ior = br.readLine();
+		br.close();
+		
+		org.omg.CORBA.Object o = orb.string_to_object(ior);
+		concordiaServer = ILibraryHelper.narrow(o);
+		
+		//concordiaServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+CONCORDIA);		
+		//montrealServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+MONTREAL);
+		//mcgillServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+MCGILL);	
 	}
 	
 	public ILibrary getServer(String inst) {

@@ -1,7 +1,5 @@
 package client;
 
-import java.rmi.Naming;
-import java.rmi.RMISecurityManager;
 import java.util.Scanner;
 
 import common.ILibrary;
@@ -21,7 +19,7 @@ public class AdminClient extends BaseClient
 	{
 		try {
 			AdminClient client = new AdminClient();
-			client.initializeServers();
+			client.initializeServers(args);
 			
 			ILibrary server;
 			
@@ -72,6 +70,7 @@ public class AdminClient extends BaseClient
 	public static void main(String args[])
 	{
 		AdminClient client = new AdminClient();
+		client.args = args;
 		client.run();
 	}
 }

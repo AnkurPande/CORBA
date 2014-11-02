@@ -1,12 +1,12 @@
 package client;
 import common.*;
 
-import java.rmi.RemoteException;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
 public class StudentClient extends BaseClient
 {
+	
 	public void showMenu() 
 	{
 		System.out.println("\n****Welcome to DRMS Student Client System****\n");
@@ -27,8 +27,7 @@ public class StudentClient extends BaseClient
 	{
 		try
 		{
-		initializeServers();
-		createAccount();
+			createAccount();
 		}
 		catch(Exception err) {
 			err.printStackTrace();
@@ -39,7 +38,6 @@ public class StudentClient extends BaseClient
 	{
 		
 		try {
-			initializeServers();
 			ILibrary server = concordiaServer;
 			boolean test = server.createAccount("test1", "test", "test@test", "123123123", "test", "abcd", "concordia");
 			System.out.println(test);
@@ -55,7 +53,8 @@ public class StudentClient extends BaseClient
 			
 			//createAccount();
 			StudentClient client = new StudentClient();
-			client.initializeServers();
+			client.args = args;
+			client.initializeServers(args);
 			
 			ILibrary server;
 			
