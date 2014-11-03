@@ -102,8 +102,15 @@ public class StudentClient extends BaseClient
 					String bookName = client.getValidString(keyboard);
 					System.out.println("Author: ");
 					String authorName = client.getValidString(keyboard);
-					//System.out.println(server.reserveBook(userName, password, bookName, authorName));
-					client.getLogger(userName).info(""+server.reserveBook(userName, password, bookName, authorName));
+					if(server.reserveBook(userName, password, bookName, authorName)) {
+						client.getLogger(userName).info("Reserve Success");
+					}
+					else {
+						//Try to reserve on other libraries
+						if(server.reserveInterLibrary(userName, password, bookName, authorName)) {
+							client.getLogger(userName).info("Reserve InterLibrary Success");
+						}
+					}
 
 					client.showMenu();
 					break;

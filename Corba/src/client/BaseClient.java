@@ -15,7 +15,7 @@ import common.ILibraryHelper;
 public abstract class BaseClient extends Thread
 {
 	ILibrary concordiaServer, mcgillServer, montrealServer;
-	static final String CONCORDIA="concordia", MCGILL="mcgill", MONTREAL="montreal";
+	static final String CONCORDIA="Concordia", MCGILL="Mcgill", MONTREAL="Montreal";
 	protected String instituteName;
 	
 	public abstract void showMenu();
@@ -40,19 +40,22 @@ public abstract class BaseClient extends Thread
 	
 	//End Logger
 	
-	public void initializeServers(String[] args) throws Exception {
-		ORB orb = ORB.init(args, null);
+	private ILibrary initServer(String[] args, String name) throws Exception {
 		
-		BufferedReader br = new BufferedReader(new FileReader("logs/Concordia.txt"));
+		ORB orb = ORB.init(args, null);
+		BufferedReader br = new BufferedReader(new FileReader("logs/"+name+".txt"));
 		String ior = br.readLine();
 		br.close();
 		
 		org.omg.CORBA.Object o = orb.string_to_object(ior);
-		concordiaServer = ILibraryHelper.narrow(o);
-		
-		//concordiaServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+CONCORDIA);		
-		//montrealServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+MONTREAL);
-		//mcgillServer = (ILibrary)Naming.lookup("rmi://127.0.0.1:1099/"+MCGILL);	
+		return ILibraryHelper.narrow(o);
+	}
+	
+	
+	public void initializeServers(String[] args) throws Exception {
+		concordiaServer = initServer(args, CONCORDIA);
+		montrealServer = initServer(args, MONTREAL);
+		mcgillServer = initServer(args, MCGILL);	
 	}
 	
 	public ILibrary getServer(String inst) {
@@ -114,9 +117,9 @@ public abstract class BaseClient extends Thread
 		Boolean valid = false;
 		ILibrary server = null;
 		System.out.println("Enter Institute Name");
-		System.out.println("'concordia' For Concordia University");
-		System.out.println("'mcgill' For Mcgill University");
-		System.out.println("'montreal' For Montreal University");
+		System.out.println("'Concordia' For Concordia University");
+		System.out.println("'Mcgill' For Mcgill University");
+		System.out.println("'Montreal' For Montreal University");
 		while(!valid)
 		{
 			try{

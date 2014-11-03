@@ -139,12 +139,14 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 				index.put(userName.charAt(0), students);
 			}
 		}
-		students.add(st);
+		synchronized(index) {
+			students.add(st);
+		}
 		
 		//System.out.println("total student in the list: "+this.index.get(userName.charAt(0)).size());	
 		logger.info("Account creation success for user: "+st.getUserName());
 		
-		return false;
+		return true;
 	}
 
 	//TODO where to put sync???
@@ -172,29 +174,31 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 			return false;
 		}
 		Book book = null;
-		synchronized(st) {
-			if(!st.getPassword().equals(password)) {
-				logger.info("Password mismatch");
-				return false;
-			}
-			book = (Book)this.books.get(bookName);
-			if(book == null) {
-				logger.info("Book not found");
-				return false;
-			}
-			if(!book.getAuthor().equals(authorName)) {
-				logger.info("Author mismatch "+authorName+" : "+book.getAuthor());
-				return false;
-			}
-			if(book.getNumOfCopy() <=0) {
-				//System.out.println("No copy left");
-				return false;
-			}
-			
+		if(!st.getPassword().equals(password)) {
+			logger.info("Password mismatch");
+			return false;
+		}
+		book = (Book)this.books.get(bookName);
+		if(book == null) {
+			logger.info("Book not found");
+			return false;
+		}
+		if(!book.getAuthor().equals(authorName)) {
+			logger.info("Author mismatch "+authorName+" : "+book.getAuthor());
+			return false;
+		}
+		if(book.getNumOfCopy() <=0) {
+			//System.out.println("No copy left");
+			return false;
+		}
+		synchronized(book) {
 			book.setNumOfCopy(book.getNumOfCopy()-1);
-			st.borrowBook(book);
-			logger.info("Reserve successfull for user "+username+" with book "+bookName+". Now "+book.getNumOfCopy()+" left");
-		}	
+			synchronized(st) {
+				st.borrowBook(book);
+			}
+		}
+		logger.info("Reserve successfull for user "+username+" with book "+bookName+". Now "+book.getNumOfCopy()+" left");
+			
 		return true;
 	}
 	
@@ -224,10 +228,11 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 		    		DatagramSocket aSocket = null;
 		    		try{
 		    			aSocket = new DatagramSocket();
-		    			byte [] m = (""+numOfDays).getBytes();
+		    			String requestData = "nonReturn:"+numOfDays;
+		    			byte [] m = requestData.getBytes();
 		    			InetAddress aHost = InetAddress.getByName("localhost");
 		    			int serverPort = s.getUdpPort();
-		    			DatagramPacket request = new DatagramPacket(m, (""+numOfDays).length(), aHost, serverPort);
+		    			DatagramPacket request = new DatagramPacket(m, requestData.length(), aHost, serverPort);
 		    	        aSocket.send(request);
 		    	        byte [] buffer = new byte[1000];
 		    	        DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
@@ -323,7 +328,17 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 				DatagramPacket request = new DatagramPacket(buffer, buffer.length);
 				aSocket.receive(request);
 				String data = new String(request.getData());
-				String response = calculateNonReturners(Integer.parseInt(data.trim()));
+				String[] requestParts = data.split(":");
+				String response = "";
+				if(requestParts.length == 2 ) {
+					//non return request
+					response = calculateNonReturners(Integer.parseInt(data.trim()));
+				}
+				else {
+					//reserve request
+					response = reserveBook("", "", requestParts[1], requestParts[2])?"true":"false";
+				}
+				
 				DatagramPacket reply = new DatagramPacket(response.getBytes(), response.length(), request.getAddress(), request.getPort());
 				aSocket.send(reply);
 			}
@@ -394,16 +409,6 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 		server.books.put(book.getName(), book);
 		book = new Book("3DMath","Fletcher", 1);
 		server.books.put(book.getName(), book);
-		
-		//books
-		/*for(int j=1; j<10; j++) { 
-			Book book = new Book("Book"+j, "Author"+j, 10);
-			server.books.put(book.getName(), book);
-		}
-		
-		server.createAccount("Test"+i, "Test"+i, "Test"+i+"@test.com", "123456", "rana"+i, "abcd", server.instituteName);
-		server.reserveBook("rana"+i, "abcd", "Book"+i, "Author"+i);
-		i++;*/
 	}
 	
 	/**
@@ -414,45 +419,19 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 	{
 		try{
 			//int port = 1099;
-			Thread server1 =  new Thread(new LibraryServer("Concordia", 6780));
+			LibraryServer library1 = new LibraryServer("Concordia", 6780);
+			Thread server1 =  new Thread(library1);
 			server1.start();
-			Thread server2 =  new Thread(new LibraryServer("Mcgill", 6781));
+			LibraryServer library2 = new LibraryServer("Mcgill", 6781);
+			Thread server2 =  new Thread(library2);
 			server2.start();
-			Thread server3 =  new Thread(new LibraryServer("Montreal", 6781));
+			LibraryServer library3 = new LibraryServer("Montreal", 6781);
+			Thread server3 =  new Thread(library3);
 			server3.start();
 			
-			/*Registry r;
-			r = LocateRegistry.createRegistry(port);
-			
-			Remote obj = UnicastRemoteObject.exportObject(server1, port);
-			r.bind("concordia", obj);
-			
-			Remote obj2 = UnicastRemoteObject.exportObject(server2, port);
-			r.bind("mcgill", obj2);
-			
-			Remote obj3 = UnicastRemoteObject.exportObject(server3, port);
-			r.bind("montreal", obj3);*/
-			
-			//server1.start();
-			//server2.start();
-			//server3.start();
-			
-			/*addData(server1);
-			addData(server2);
-			addData(server3);
-			
-			servers.add(server1);
-			servers.add(server2);
-			servers.add(server3);*/
-			
-			//server1.createAccount("Frankenstein", "Test", "frankenstein@test.com", "123456", "Frankenstein", "abcd", server1.instituteName);
-			//server2.createAccount("drwho900", "Test", "drwho900@test.com", "123456", "drwho900", "abcd", server2.instituteName);
-			//server3.createAccount("patrickstar", "Test", "patrickstar@test.com", "123456", "patrickstar", "abcd", server3.instituteName);
-			
-			/*server3.reserveBook("patrickstar", "abcd", "Opencl", "Munshi");
-			server2.reserveBook("drwho900", "abcd", "3DMath", "Fletcher");
-			server2.reserveBook("drwho900", "abcd", "3DMath", "Fletcher");
-			server1.reserveBook("Frankenstein", "abcd", "Cuda", "Nicholas");*/
+			addData(library1);
+			addData(library2);
+			addData(library3);
 
 			//runDebugTool();
 		}
@@ -511,7 +490,35 @@ public class LibraryServer extends ILibraryPOA implements Runnable
 	@Override
 	public boolean reserveInterLibrary(String username, String password,
 			String bookName, String authorName) {
-		// TODO Auto-generated method stub
+
+		for(LibraryServer s : servers) { 
+	    	if(s.instituteName != this.instituteName) {
+	    		DatagramSocket aSocket = null;
+	    		try{
+	    			aSocket = new DatagramSocket();
+	    			String requestString = "reserve:"+bookName+":"+authorName;
+	    			byte [] m = requestString.getBytes();
+	    			InetAddress aHost = InetAddress.getByName("localhost");
+	    			int serverPort = s.getUdpPort();
+	    			DatagramPacket request = new DatagramPacket(m, requestString.length(), aHost, serverPort);
+	    	        aSocket.send(request);
+	    	        byte [] buffer = new byte[1000];
+	    	        DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+	    	        aSocket.receive(reply);
+	    	        String response = new String(reply.getData());
+	    	        Boolean booked = new Boolean(response);
+	    	        if(booked) {
+	    	        	return true;
+	    	        }
+	    	        
+	    		}catch(Exception e){
+	    			e.printStackTrace();
+	    		}finally{
+	    			aSocket.close();
+	    		}
+	    	}
+        }
+
 		return false;
 	}
 
